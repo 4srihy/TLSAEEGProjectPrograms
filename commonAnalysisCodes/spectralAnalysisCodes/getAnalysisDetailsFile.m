@@ -1,4 +1,4 @@
-function [analysisDetailsFile,numMSInRangePerProtocol] = getAnalysisDetailsFile(analyzedDataFolder,subjectName,refType,protocolType,stRange,removeMicroSaccadesFlag,spatialFrequenciesToRemove,useCleanData,temporalFrequencyToUse)
+function [analysisDetailsFile,numMSInRangePerProtocol] = getAnalysisDetailsFile(analyzedDataFolder,subjectName,refType,protocolType,stRange,removeMicroSaccadesFlag,spatialFrequenciesToRemove,useCleanData,useNewBadTrials,temporalFrequencyToUse)
 
 if removeMicroSaccadesFlag
     analysisDetailsFile = fullfile(analyzedDataFolder,[subjectName '_' refType ...
@@ -15,6 +15,10 @@ if ~isempty(spatialFrequenciesToRemove) && ~strcmp(protocolType,'TFCP')
     for i=1:length(spatialFrequenciesToRemove)
         analysisDetailsFile = cat(2,analysisDetailsFile,num2str(spatialFrequenciesToRemove(i)));
     end
+end
+
+if (useNewBadTrials) && ~strcmp(protocolType,'TFCP')
+    analysisDetailsFile = [analysisDetailsFile '_RemoveNewBadTs'];
 end
 
 if useCleanData

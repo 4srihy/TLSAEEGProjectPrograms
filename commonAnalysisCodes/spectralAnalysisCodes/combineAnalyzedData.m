@@ -1,17 +1,13 @@
 % This program combines analyzedData across subjects
 
-function dataForDisplay = combineAnalyzedData(folderSourceString,subjectNameList,projectName,refType,protocolType,stRange,removeMicroSaccadesFlag,gamma1Range,gamma2Range,alphaRange,spatialFrequenciesToRemove,useCleanData,temporalFrequencyToUse)
+function dataForDisplay = combineAnalyzedData(folderSourceString,subjectNameList,projectName,refType,protocolType,stRange,removeMicroSaccadesFlag,gamma1Range,gamma2Range,alphaRange)
 
 if ~exist('stRange','var');         stRange = [0.25 0.75];              end
 if ~exist('removeMicroSaccadesFlag','var'); removeMicroSaccadesFlag=0;  end
 if ~exist('gamma1Range','var');     gamma1Range = [20 34];              end
 if ~exist('gamma2Range','var');     gamma2Range = [36 66];              end
 if ~exist('alphaRange','var');      alphaRange = [8 12];                end
-if ~exist('spatialFrequenciesToRemove','var'); spatialFrequenciesToRemove=[];  end
-if ~exist('useCleanData','var');    useCleanData=0;                     end
-if ~exist('temporalFrequencyToUse','var'); temporalFrequencyToUse=[];   end
-
-SSVEPFreqHz = 2*temporalFrequencyToUse;
+SSVEPFreqHz = 32;
 
 analyzedDataFolder = fullfile(folderSourceString,'analyzedData',projectName,protocolType);
 
@@ -29,7 +25,13 @@ for iSub = 1:numSubjects
     subjectName = subjectNameList{iSub};
     
     % Analysis Input file
-    analysisDetailsInputFile = getAnalysisDetailsFile(analyzedDataFolder,subjectName,refType,protocolType,stRange,removeMicroSaccadesFlag,spatialFrequenciesToRemove,useCleanData,temporalFrequencyToUse);
+    if removeMicroSaccadesFlag
+        analysisDetailsInputFile = fullfile(analyzedDataFolder,[subjectName '_' refType ...
+            '_stRange_' num2str(1000*stRange(1)) '_' num2str(1000*stRange(2)) '_NoMS.mat']);
+    else
+        analysisDetailsInputFile = fullfile(analyzedDataFolder,[subjectName '_' refType ...
+            '_stRange_' num2str(1000*stRange(1)) '_' num2str(1000*stRange(2)) '.mat']);
+    end
     
     if ~isfile(analysisDetailsInputFile)
         disp(['fileName for subject ' subjectName ' does not exist']);
@@ -56,7 +58,7 @@ for iSub = 1:numSubjects
             freqVals = analyzedData.freqVals;
             dataForDisplay.freqVals = freqVals;
             
-            if strcmpi(protocolType,'SF_ORI') || (strcmpi(protocolType,'TFCP') && (temporalFrequencyToUse==0))
+            if strcmpi(protocolType,'SF_ORI')
                 % Get alpha and gamma Pos
                 posList = cell(1,3);
                 rangeNames{1} = 'SG';
@@ -108,8 +110,8 @@ for iSub = 1:numSubjects
             error(['freqValsTF do not match for ' subjectName]);
         end
         
-        tfPower = squeeze(mean(analyzedData.tfPower,1));
-        tfPowerBL = repmat(squeeze(mean(tfPower(blPosTF,:),1)),length(timeValsTF),1);
+        tfPower = squeeze(mean(analyzedData.tfPower,1,'omitnan'));
+        tfPowerBL = repmat(squeeze(mean(tfPower(blPosTF,:),1,'omitnan')),length(timeValsTF),1);
         dTFPower = 10.*log10(tfPower./tfPowerBL);
         dTFPowerDBAllSubjects = cat(3,dTFPowerDBAllSubjects,dTFPower);
         

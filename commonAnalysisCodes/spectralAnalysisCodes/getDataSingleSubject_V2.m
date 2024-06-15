@@ -1,31 +1,42 @@
-function [allProtocolsBLData,stPowerVsFreq,blPowerVsFreq,freqVals,tfPower,timeValsTF,freqValsTF,erp,timeVals,numGoodTrials,numAnalysedElecs]=getDataSingleSubject(cleanDataFolder,fileLists,capType,electrodeList,stRange,TFFlag,numMSInRangePerProtocol,condVals,params,discardBadElecFlag)
+%by srishty
+function [allProtocolsBLData,stPowerVsFreq,blPowerVsFreq,freqVals,tfPower,timeValsTF,freqValsTF,erp,timeVals,numGoodTrials,numAnalysedElecs]=getDataSingleSubject_V2(cleanDataFolder,fileLists,badTrialFileLists,capType,electrodeList,stRange,TFFlag,numMSInRangePerProtocol,condVals,stFlag,refType,params,discardBadElecFlag)
 
 if ~exist('TFFlag','var') || isempty(TFFlag); TFFlag= 1; end
+if ~exist('stFlag','var')       stFlag = 1;     end
 if ~exist('stRange','var') || isempty(stRange); stRange = [0.25 0.75]; end
 if ~exist('params','var'); params=[]; end
 
 if exist('numMSInRangePerProtocol','var') && ~isempty(numMSInRangePerProtocol)
     if length(numMSInRangePerProtocol)~=length(fileLists); error('Remove bad protocols first...'); end
 end
+%rmsBadInfoFolder = 'C:\Users\Srishty\OneDrive - Indian Institute of Science\Documents\supratim\TLS\TLSAEEGProjectPrograms-master\ageProjectCodes\badTrialsForDecimatedDataIncludingRMS';
+rmsBadInfoFolder = 'C:\Users\Srishty\OneDrive - Indian Institute of Science\Documents\supratim\TLS\TLSAEEGProjectPrograms-master\ageProjectCodes\badTrialsForEyesClosedIncludingRMS'; %05-11-22
 
-iLoop = 1;
+iLoop = 1;%
 for iProt = 1:length(fileLists)
     sessionData = load(fullfile(cleanDataFolder,fileLists{iProt}),'eegData','badElecs','trialConditionVals','timeVals');
     eegData = sessionData.eegData;
     badElecs = sessionData.badElecs;
     trialConditionVals = sessionData.trialConditionVals;
     timeVals = sessionData.timeVals;
-    if length(trialConditionVals)~=size(eegData,2)
+    if ~isempty(trialConditionVals) && length(trialConditionVals)~=size(eegData,2)
         error('Wrong number of trials in EEG data or condition values...');
     end
     
+    % only for clean data and decimated data for SF_ORI
+    if ~stFlag   %05-11-22
+        rmsBadElecsNTrials = load(fullfile(rmsBadInfoFolder,badTrialFileLists{iProt}),'badElecs','badTrials');
+        badElecs = rmsBadElecsNTrials.badElecs;
+        badTrials = rmsBadElecsNTrials.badTrials;
+        eegData(:,badTrials,:) =[];
+    end
     % Check for bad protocols
     badImpedanceElecs = badElecs.badImpedanceElecs;
     noisyElecs = badElecs.noisyElecs;
     flatPSDElecs = badElecs.flatPSDElecs;
-    allBadElecs = unique([badImpedanceElecs;noisyElecs;flatPSDElecs])';
+    allBadElecs = (union(union(badImpedanceElecs,noisyElecs),flatPSDElecs))';
     
-    electrodeListVis = getElectrodeList(capType,'bipolar');
+    electrodeListVis = getElectrodeList(capType,refType);
     clear goodSideFlag
     for iSide = 1:length(electrodeListVis)
         clear goodElecFlag
@@ -43,8 +54,8 @@ for iProt = 1:length(fileLists)
     if exist('discardBadElecFlag','var') && ~discardBadElecFlag
         warning('Not discarding data from bad electrodes...')
     else
-        for iBE = allBadElecs
-            eegData(iBE,:,:) = NaN(size(eegData,2),size(eegData,3));
+        for iBE = 1:length(allBadElecs)
+            eegData(allBadElecs(iBE),:,:) = nan;%NaN(size(eegData,2),size(eegData,3));
         end
     end
     
@@ -61,28 +72,43 @@ for iProt = 1:length(fileLists)
     else
         goodProtFlag(iLoop)=false;
     end
-    
-    [stPowerVsFreq(iLoop,:,:),blPowerVsFreq(iLoop,:,:),freqVals,tfPower(iLoop,:,:,:),timeValsTF,freqValsTF,erp(iLoop,:,:,:),numAnalysedElecs(iLoop,:)]=...
-        getDataSingleSession(eegData,timeVals,electrodeList,stRange,TFFlag,params);
+   
+    %%%%%%%%%%%%
+    %[stPowerVsFreq(iLoop,:,:),blPowerVsFreq(iLoop,:,:),freqVals,tfPower(iLoop,:,:,:),timeValsTF,freqValsTF,erp(iLoop,:,:,:),numAnalysedElecs(iLoop,:)]= getDataSingleSession(eegData,timeVals,electrodeList,stRange,TFFlag,params);
+    [stPowerVsFreq0{iLoop},blPowerVsFreq0{iLoop},freqVals,tfPower(iLoop,:,:,:),timeValsTF,freqValsTF,erp(iLoop,:,:,:),numAnalysedElecs(iLoop,:)]=...
+        getDataSingleSessionWithTrials(eegData,timeVals,electrodeList,stRange,TFFlag,params,stFlag,refType); %by Srishty 12-07-22
+   %%%%%%%%%%%%%%%%%%
     numGoodTrials(iLoop) = size(eegData,2);
     iLoop = iLoop+1;
 end
 
 % Baseline data averaged across all eligible visual electrodes. Don't calculate for topoplots
 if TFFlag && ~(exist('numMSInRangePerProtocol','var') && ~isempty(numMSInRangePerProtocol))
-    allProtocolsBLData.blPowerVsFreq = removeDimIfSingleton(mean(blPowerVsFreq,2),2);
+    allProtocolsBLData.blPowerVsFreq = removeDimIfSingleton(mean(blPowerVsFreq0,2),2);
     allProtocolsBLData.goodProtFlag = goodProtFlag;
 else
     allProtocolsBLData.goodProtFlag = goodProtFlag;
 end
 
 if any(goodProtFlag)
-    stPowerVsFreq = removeDimIfSingleton(mean(stPowerVsFreq(goodProtFlag,:,:),1),1);
-    blPowerVsFreq = removeDimIfSingleton(mean(blPowerVsFreq(goodProtFlag,:,:),1),1);
+    if iLoop>2
+     for i=1:iLoop-2
+         stPowerVsFreq0{i} = cat(3,stPowerVsFreq0{i},stPowerVsFreq0{i+1});
+          blPowerVsFreq0{i} = cat(3,blPowerVsFreq0{i},blPowerVsFreq0{i+1});
+     end
+     stPowerVsFreq = stPowerVsFreq0{iLoop-2};
+     blPowerVsFreq = blPowerVsFreq0{iLoop-2};
+    else
+        stPowerVsFreq = stPowerVsFreq0{1};
+        blPowerVsFreq = blPowerVsFreq0{1};
+    end
+%     stPowerVsFreq = removeDimIfSingleton(mean(stPowerVsFreq(goodProtFlag,:,:),1),1);
+%     blPowerVsFreq = removeDimIfSingleton(mean(blPowerVsFreq(goodProtFlag,:,:),1),1);
     tfPower = removeDimIfSingleton(mean(tfPower(goodProtFlag,:,:,:),1),1);
     erp = removeDimIfSingleton(mean(erp(goodProtFlag,:,:),1),1);
     numGoodTrials = sum(numGoodTrials(goodProtFlag));
 else
+    disp('bad visual electrodes: data not saved');
     stPowerVsFreq = [];
     blPowerVsFreq = [];
     tfPower = [];
@@ -111,7 +137,7 @@ if ~exist('params','var') || isempty(params)
     params.tapers   = [1 1];
     params.pad      = -1;
     params.Fs       = Fs;
-    params.fpass    = [0 100];
+    params.fpass    = [0 500];
     params.trialave = 1;
 end
 

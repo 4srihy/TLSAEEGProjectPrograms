@@ -1,12 +1,6 @@
-% This code by default gives a cell array of 10 electrodes when unipolar is
-% chosen, and 3 groups each with 3 electrode pairs when bipolar is chosen.
-% An option is now added so that for the unipolar case, the 3 separate
-% groups are also returned.
-
-function [electrodeList,elecTags,elecNums] = getElectrodeList(capLayout,refType,topoplotFlag,returnSeparateUnipolarGroupsFlag)
+function [electrodeList,elecTags,elecNums] = getElectrodeList(capLayout,refType,topoplotFlag)
 
 if ~exist('topoplotFlag','var');            topoplotFlag=0;             end
-if ~exist('returnSeparateUnipolarGroupsFlag','var');  returnSeparateUnipolarGroupsFlag=0;  end
 
 if topoplotFlag
     electrodeList = getElectrodeListForTopoplots(capLayout,refType);
@@ -16,7 +10,7 @@ if topoplotFlag
 else % get selected electrodes
     
     if strcmp(capLayout,'actiCap64')
-        if strcmp(refType,'unipolar') || strcmp(refType,'laplacian')
+        if strcmp(refType,'unipolar') ||  strcmp(refType,'average') %edited by Srishty 25-09-22
             
             % Left side
             iSide = 1; iElec = 0;
@@ -28,33 +22,19 @@ else % get selected electrodes
             % Central electrodes common for both left side and right side
             iElec = iElec+1; electrodeList{iSide}{iElec} = 30;              elecTags{iSide}{iElec} = 'Oz';      elecNums{iSide}{iElec} = electrodeList{iSide}{iElec};
             iElec = iElec+1; electrodeList{iSide}{iElec} = 30+32;           elecTags{iSide}{iElec} = 'POz';     elecNums{iSide}{iElec} = electrodeList{iSide}{iElec};
+            %             iElec = iElec+1; electrodeList{iSide}{iElec} = 21+32;    elecTags{iSide}{iElec} = 'CPz';
             
             % Right side
+            %             iSide = 2; iElec = 0;
             iElec = iElec+1; electrodeList{iSide}{iElec} = 31;              elecTags{iSide}{iElec} = 'O';       elecNums{iSide}{iElec} = electrodeList{iSide}{iElec};
             iElec = iElec+1; electrodeList{iSide}{iElec} = 31+32;           elecTags{iSide}{iElec} = 'PO';      elecNums{iSide}{iElec} = electrodeList{iSide}{iElec};
             iElec = iElec+1; electrodeList{iSide}{iElec} = 26+32;           elecTags{iSide}{iElec} = 'P';       elecNums{iSide}{iElec} = electrodeList{iSide}{iElec};
             iElec = iElec+1; electrodeList{iSide}{iElec} = 26;              elecTags{iSide}{iElec} = 'P';       elecNums{iSide}{iElec} = electrodeList{iSide}{iElec};
             
-            if returnSeparateUnipolarGroupsFlag
-                % Left side
-                iSide = 2; iElec = 0;
-                iElec = iElec+1; electrodeList{iSide}{iElec} = 29+32;           elecTags{iSide}{iElec} = 'PO';      elecNums{iSide}{iElec} = electrodeList{iSide}{iElec};
-                iElec = iElec+1; electrodeList{iSide}{iElec} = 25+32;           elecTags{iSide}{iElec} = 'P';       elecNums{iSide}{iElec} = electrodeList{iSide}{iElec};
-                iElec = iElec+1; electrodeList{iSide}{iElec} = 24;              elecTags{iSide}{iElec} = 'P';       elecNums{iSide}{iElec} = electrodeList{iSide}{iElec};
-                
-                % Right side
-                iSide = 3; iElec = 0;
-                iElec = iElec+1; electrodeList{iSide}{iElec} = 31+32;           elecTags{iSide}{iElec} = 'PO';      elecNums{iSide}{iElec} = electrodeList{iSide}{iElec};
-                iElec = iElec+1; electrodeList{iSide}{iElec} = 26+32;           elecTags{iSide}{iElec} = 'P';       elecNums{iSide}{iElec} = electrodeList{iSide}{iElec};
-                iElec = iElec+1; electrodeList{iSide}{iElec} = 26;              elecTags{iSide}{iElec} = 'P';       elecNums{iSide}{iElec} = electrodeList{iSide}{iElec};
-                
-                % Central electrodes common for both left side and right side
-                iSide = 4; iElec = 0;
-                iElec = iElec+1; electrodeList{iSide}{iElec} = 30;              elecTags{iSide}{iElec} = 'Oz';      elecNums{iSide}{iElec} = electrodeList{iSide}{iElec};
-                iElec = iElec+1; electrodeList{iSide}{iElec} = 30+32;           elecTags{iSide}{iElec} = 'POz';     elecNums{iSide}{iElec} = electrodeList{iSide}{iElec};
-                iElec = iElec+1; electrodeList{iSide}{iElec} = 29;              elecTags{iSide}{iElec} = 'O';       elecNums{iSide}{iElec} = electrodeList{iSide}{iElec};
-                iElec = iElec+1; electrodeList{iSide}{iElec} = 31;              elecTags{iSide}{iElec} = 'O';       elecNums{iSide}{iElec} = electrodeList{iSide}{iElec};
-            end
+            % Central electrodes common for both left side and right side
+            %             iElec = iElec+1; electrodeList{iSide}{iElec} = 30;              elecTags{iSide}{iElec} = 'Oz';      elecNums{iSide}{iElec} = electrodeList{iSide}{iElec};
+            %             iElec = iElec+1; electrodeList{iSide}{iElec} = 30+32;           elecTags{iSide}{iElec} = 'POz';     elecNums{iSide}{iElec} = electrodeList{iSide}{iElec};
+            % %             iElec = iElec+1; electrodeList{iSide}{iElec} = 21+32;    elecTags{iSide}{iElec} = 'CPz';
             
         elseif strcmp(refType,'bipolar')
             
@@ -80,8 +60,8 @@ else % get selected electrodes
         
         
         
-    elseif strcmp(capLayout,'actiCap31Posterior')
-        if strcmp(refType,'unipolar')
+    elseif strcmp(capLayout,'actiCap31Posterior') 
+        if strcmp(refType,'unipolar') ||  strcmp(refType,'average')
             
             % Left side
             iSide = 1; iElec = 0;
@@ -136,6 +116,12 @@ function electrodeList = getElectrodeListForTopoplots(capLayout,refType)
 clear cL bL chanlocs iElec electrodeList
 switch refType
     case 'unipolar'
+        cL = load([capLayout '.mat']);
+        chanlocs = cL.chanlocs;
+        for iElec = 1:length(chanlocs)
+            electrodeList{iElec}{1} = iElec; %#ok<*AGROW>
+        end
+    case 'average'
         cL = load([capLayout '.mat']);
         chanlocs = cL.chanlocs;
         for iElec = 1:length(chanlocs)

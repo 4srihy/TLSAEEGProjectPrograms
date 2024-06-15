@@ -7,7 +7,7 @@
 % Option added to send a 2D array of subjectList in which each entry is a
 % list of subjects.
 
-function displayAnalyzedData(folderSourceString,subjectNameLists,strList,projectName,refType,protocolType,stRange,removeMicroSaccadesFlag,gamma1Range,gamma2Range,alphaRange,useMedianFlag,spatialFrequenciesToRemove,useCleanData,temporalFrequencyToUse)
+function displayAnalyzedData(folderSourceString,subjectNameLists,strList,projectName,refType,protocolType,stRange,removeMicroSaccadesFlag,gamma1Range,gamma2Range,alphaRange,useMedianFlag)
 
 if ~exist('stRange','var');         stRange = [0.25 0.75];              end
 if ~exist('removeMicroSaccadesFlag','var'); removeMicroSaccadesFlag=0;  end
@@ -15,9 +15,6 @@ if ~exist('gamma1Range','var');     gamma1Range = [20 34];              end
 if ~exist('gamma2Range','var');     gamma2Range = [36 66];              end
 if ~exist('alphaRange','var');      alphaRange = [8 12];                end
 if ~exist('useMedianFlag','var');   useMedianFlag = 1;                  end
-if ~exist('spatialFrequenciesToRemove','var'); spatialFrequenciesToRemove=[];  end
-if ~exist('useCleanData','var');    useCleanData=0;                     end
-if ~exist('temporalFrequencyToUse','var'); temporalFrequencyToUse=[];   end
 
 numGroups = length(subjectNameLists);
 
@@ -26,20 +23,16 @@ timeLims = [-0.5 1.2]; freqLims = [0 100]; BLPSDLims = [-3 3];
 
 if strcmpi(protocolType,'SF_ORI')
     cLims = [-2 2];
-    %barLims = [-1 2];
+    barLims = [-1 2];
 elseif strcmpi(protocolType,'TFCP')
-    if temporalFrequencyToUse==0
-        cLims = [-2 2];
-    else
-        cLims = [-4 12];
-    end
-    %barLims = [4 10];
+    cLims = [-4 12];
+    barLims = [4 10];
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%% Display Settings %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 displaySettings.fontSizeLarge = 10; displaySettings.tickLengthMedium = [0.025 0];
 
 if numGroups==2 % Murty's color scheme
-    colormap magma;
+    colormap jet;
     colorNames = hot(8); colorNames([1:3,end-2:end],:) = [];
     displaySettings.colorNames = colorNames;
 else
@@ -60,12 +53,12 @@ for i=1:numGroups
     disp(['Getting data for group: ' strList{i}]);
     subjectNameList = subjectNameLists{i};
     if nonMatchedFlag
-        dataForDisplayAllGroups{i} = combineAnalyzedData(folderSourceString,subjectNameList,projectName,refType,protocolType,stRange,removeMicroSaccadesFlag,gamma1Range,gamma2Range,alphaRange,spatialFrequenciesToRemove,useCleanData,temporalFrequencyToUse);
+        dataForDisplayAllGroups{i} = combineAnalyzedData(folderSourceString,subjectNameList,projectName,refType,protocolType,stRange,removeMicroSaccadesFlag,gamma1Range,gamma2Range,alphaRange);
     else
         numLists = length(subjectNameList);
         dataForDisplayAllGroupsTMP = cell(1,numLists);
         for j=1:numLists
-            dataForDisplayAllGroupsTMP{j} = combineAnalyzedData(folderSourceString,subjectNameList{j},projectName,refType,protocolType,stRange,removeMicroSaccadesFlag,gamma1Range,gamma2Range,alphaRange,spatialFrequenciesToRemove,useCleanData,temporalFrequencyToUse);
+            dataForDisplayAllGroupsTMP{j} = combineAnalyzedData(folderSourceString,subjectNameList{j},projectName,refType,protocolType,stRange,removeMicroSaccadesFlag,gamma1Range,gamma2Range,alphaRange);
         end
         dataForDisplayAllGroups{i} = combineDataForDisplay(dataForDisplayAllGroupsTMP,0);
     end
@@ -129,7 +122,20 @@ for i=1:numGroups
     
     set(hDeltaTF(i),'yTick',[0 50 100],'YTicklabel',[0 50 100]);
     ylabel(hDeltaTF(i),'Frequency (Hz)');
-
+    
+    % Set Colorbar
+    tmpPos = get(hDeltaTF(i),'Position');
+    cbPos = [tmpPos(1)+tmpPos(3)+0.015 tmpPos(2) 0.015 tmpPos(4)];
+    hCB = colorbar('Position',cbPos,'Limits',cLims);
+    
+    set(hCB,'ydir','normal','box','off');
+    set(hCB,'xtick',[],'ytick',[cLims(1) 0 cLims(2)],'yticklabel',[cLims(1) 0 cLims(2)]);
+    set(hCB,'yaxislocation','right');
+    %ylabel(hCB,'dB');
+    set(hCB,'fontsize',displaySettings.fontSizeLarge,'TickDir','out','TickLength',displaySettings.tickLengthMedium(1));
+    
+    title(hDeltaTF(i),strListDisplay{i},'color',displaySettings.colorNames(i,:));
+    
     % Topoplots
     for j=1:numRanges
         axes(hTopo(i,j)); %#ok<LAXES>
@@ -146,19 +152,6 @@ for i=1:numGroups
             title(dataForDisplay.rangeNames{j},'fontsize',displaySettings.fontSizeLarge);
         end
     end
-    
-    % Set Colorbar
-    tmpPos = get(hDeltaTF(i),'Position');
-    cbPos = [tmpPos(1)+tmpPos(3)+0.015 tmpPos(2) 0.015 tmpPos(4)];
-    hCB = colorbar('Position',cbPos,'Limits',cLims);
-    
-    set(hCB,'ydir','normal','box','off');
-    set(hCB,'xtick',[],'ytick',[cLims(1) 0 cLims(2)],'yticklabel',[cLims(1) 0 cLims(2)]);
-    set(hCB,'yaxislocation','right');
-    %ylabel(hCB,'dB');
-    set(hCB,'fontsize',displaySettings.fontSizeLarge,'TickDir','out','TickLength',displaySettings.tickLengthMedium(1));
-    
-    title(hDeltaTF(i),strListDisplay{i},'color',displaySettings.colorNames(i,:));
 end
 
 % ERPs
@@ -213,20 +206,6 @@ for i=1:numRanges
         end
         errorbar(i+barPosList(j),mD,sD,'linestyle','none','marker','none','color',displaySettings.colorNames(j,:)); hold on;
         bar(i+barPosList(j),mD,barWidth,'facecolor',displaySettings.colorNames(j,:),'facealpha',0.85);
-        
-        % Plot individual data points
-        scatter(i+barPosList(j) + zeros(1,length(d)),d,1,[0.5 0.5 0.5]);
-    end
-    
-    if ~nonMatchedFlag
-        numDataPoints = size(dataBar{1},1);
-        for j=1:numDataPoints
-            dataPointsToConnect = zeros(1,numGroups);
-            for k=1:numGroups
-                dataPointsToConnect(k) = dataBar{k}(j,i);
-            end
-            plot(i+barPosList,dataPointsToConnect,'color',[0.5 0.5 0.5]);
-        end
     end
 
     if useMedianFlag
@@ -234,24 +213,15 @@ for i=1:numRanges
         disp([dataForDisplay.rangeNames{i} '; KW test: X2(' num2str(tblD{4,3}) ')=' num2str(round(tblD{2,5},2)) ', p=' num2str(pD)]);
     else
         if nonMatchedFlag
-            if i==3 % alpha
-                [~,pD,~,stats] = ttest2(dataBar{1}(:,i),dataBar{2}(:,i),'tail','left');
-            else
-                [~,pD,~,stats] = ttest2(dataBar{1}(:,i),dataBar{2}(:,i),'tail','right');
-            end
+            [~,pD,~,stats] = ttest2(dataBar{1}(:,i),dataBar{2}(:,i));
         else
-            if i==3 % alpha
-                [~,pD,~,stats] = ttest(dataBar{1}(:,i),dataBar{2}(:,i),'tail','left');
-            else
-                [~,pD,~,stats] = ttest(dataBar{1}(:,i),dataBar{2}(:,i),'tail','right');
-            end
+            [~,pD,~,stats] = ttest(dataBar{1}(:,i),dataBar{2}(:,i));
         end
         disp([dataForDisplay.rangeNames{i} '; t-test: tstat(' num2str(stats.df) ')=' num2str(round(stats.tstat,2)) ', p=' num2str(pD)]);
     end
 end
 
-xlim([0 numRanges+1]);
-% axis([0 numRanges+1 barLims]);
+axis([0 numRanges+1 barLims]);
 ylabel('\DeltaPower (dB)');
 set(gca,'xTick',1:numRanges,'xTicklabel',dataForDisplay.rangeNames);
 set(gca,'fontsize',displaySettings.fontSizeLarge,'TickDir','out','TickLength',displaySettings.tickLengthMedium);

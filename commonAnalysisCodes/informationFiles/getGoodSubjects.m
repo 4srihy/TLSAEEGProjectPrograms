@@ -6,7 +6,7 @@ if ~exist('projectName','var');     projectName = 'ADGammaProject';     end
 if ~exist('discardNoUsefulSessionsFlag','var'); discardNoUsefulSessionsFlag=1; end
 if ~exist('protocolType','var'); protocolType = 'SF_ORI';               end
 
-if strcmpi(projectName,'VisualGamma')
+if strcmpi(projectName,'VisualGamma')                                
     % This segment not written yet
 else
     d = load([projectName 'Details.mat']);
