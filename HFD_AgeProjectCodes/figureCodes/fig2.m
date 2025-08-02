@@ -1,5 +1,7 @@
 %% Figure 2 of paper
 
+plotFigures
+
 folderName = fullfile(folderSourceString{1},projectName,'higFracDim');
 stFlag = 1;
 medianFlag=1;
