@@ -1,5 +1,5 @@
-%% it generates fig 5 contain power and hfd matched for all frequency ranges
-
+%% it generates fig 6 contain power and hfd matched for all frequency ranges
+plotFigures;
 %plotting TF Power and HFD
 clear powerBl powerSt tfPower dim0 dimS0 dimDiff dimTF
 bonferroniFlag = 0;
