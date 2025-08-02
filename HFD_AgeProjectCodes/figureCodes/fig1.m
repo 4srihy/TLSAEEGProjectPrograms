@@ -2,6 +2,9 @@
 % adding HFD computation for artificial data like straight line, sin, noisy
 % sin, gaussian, pink noise, wfbm
 % to add p values in violin plots
+% run 'plotFigures' before running most of the files in this folder
+plotFigures
+
 figure;
 
 % Load the data for human single trial for elec 30
