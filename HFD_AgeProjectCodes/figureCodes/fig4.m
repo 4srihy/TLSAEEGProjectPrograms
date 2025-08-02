@@ -3,6 +3,7 @@
 %adding HFD variation with Poower
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%parameters%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+plotFigures; 
 diseaseFlag=0;  
 bonferroniFlag = 0;   
 
