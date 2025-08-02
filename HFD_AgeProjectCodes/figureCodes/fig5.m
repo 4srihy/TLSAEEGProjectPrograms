@@ -1,4 +1,5 @@
 %plotting TF Power and HFD
+plotFigures;
 clear powerBl powerSt tfPower dim0 dimS0 dimDiff dimTF 
 bonferroniFlag = 0;
 matchingFlag = 0;
